@@ -22,7 +22,7 @@ import {
   Cancel
 } from '@mui/icons-material'
 import { useCars } from '../../contexts/CarContext'
-import { useBookings } from '../../contexts/BookingContext'
+import { useBookings } from '../../hooks/useBookings'
 import { useAuth } from '../../contexts/AuthContext'
 import { BookingStatus } from '../../types'
  

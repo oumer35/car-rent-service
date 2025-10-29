@@ -29,7 +29,7 @@ import {
   // Security
 } from '@mui/icons-material'
 import { useCars } from '../../contexts/CarContext'
-import { useBookings } from '../../contexts/BookingContext'
+import { useBooking } from '../../contexts/BookingContext'
 import { useSearchParams } from 'react-router-dom'
 
 const extraOptions = [
@@ -69,7 +69,7 @@ const tariffPlans = [
 
 export default function Tariffs() {
   const { cars } = useCars()
-  const { calculatePrice } = useBookings()
+  const { calculatePrice } = useBooking()
   const [searchParams] = useSearchParams()
   const carId = searchParams.get('car') || cars[0]?.id
   const car = cars.find(c => c.id === carId) || cars[0]
@@ -103,6 +103,7 @@ export default function Tariffs() {
       end: dayAfter.toISOString().split('T')[0]
     }))
   }, [])
+  
 
   const handleCalculate = async (e: React.FormEvent) => {
   e.preventDefault();

@@ -19,7 +19,7 @@ import {
   Schedule
 } from '@mui/icons-material'
 import { useCars } from '../../../contexts/CarContext'
-import { useBookings } from '../../../contexts/BookingContext'
+import { useBooking } from '../../../contexts/BookingContext'
 import { storage } from '../../../services/api'
 import {Activity, Booking} from '../../../types'
 
@@ -37,7 +37,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const { cars, loading: carsLoading } = useCars()
-  const { bookings, loading: bookingsLoading } = useBookings()
+  const { bookings, loading: bookingsLoading } = useBooking()
   const [stats, setStats] = useState<DashboardStats>({
     totalCars: 0,
     totalBookings: 0,
@@ -68,20 +68,20 @@ export default function AdminDashboard() {
       setStats(dashboardStats)
 
       // Generate recent activity
-      const activity = [
-        ...bookings.slice(0, 5).map((booking: Booking) => ({
-          type: 'booking',
-          message: `New booking from ${booking.userName}`,
-          time: new Date(booking.createdAt).toLocaleDateString(),
-          color: 'primary'
-        })),
-        ...cars.slice(0, 3).map(car => ({
-          type: 'car',
-          message: `${car.name} added to fleet`,
-          time: 'Recently',
-          color: 'success'
-        }))
-      ].sort(() => Math.random() - 0.5).slice(0, 5)
+      const activity: Activity[] = [
+  ...bookings.slice(0, 5).map< Activity >(booking => ({
+    type: 'booking',
+    message: `New booking from ${booking.userName}`,
+    time: new Date(booking.createdAt).toLocaleDateString(),
+    color: 'primary'
+  })),
+  ...cars.slice(0, 3).map<Activity>(car => ({
+    type: 'car',
+    message: `${car.name} added to fleet`,
+    time: 'Recently',
+    color: 'success'
+  }))
+].sort(() => Math.random() - 0.5).slice(0, 5)
 
       setRecentActivity(activity)
     }

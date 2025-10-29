@@ -24,7 +24,7 @@ import {
   Cancel,
   Visibility
 } from '@mui/icons-material'
-import { useBookings } from '../../../contexts/BookingContext'
+import { useBooking } from '../../../contexts/BookingContext'
 import { useCars } from '../../../contexts/CarContext'
 import { Booking, BookingStatus } from '../../../types'
 
@@ -51,7 +51,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function AdminBookings() {
-  const { bookings, updateBookingStatus, loading, error } = useBookings()
+  const { bookings, updateBookingStatus, loading, error } = useBooking()
   const { cars } = useCars()
   const [selectedTab, setSelectedTab] = useState(0)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
