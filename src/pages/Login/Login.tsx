@@ -10,11 +10,11 @@ import {
   Box,
   Alert
 } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
-  const { sendCode, verifyCode } = useAuth();
+  const { sendVerificationCode, verifyCode } = useAuth();
   const navigate = useNavigate();
   
   const [signupForm, setSignupForm] = useState({
@@ -30,51 +30,45 @@ export default function Login() {
     verify: ''
   });
 
-  const handleSignUp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!/^\d{9,15}$/.test(signupForm.phone)) {
-      setMessages(prev => ({ ...prev, signup: 'Invalid phone number' }));
-      return;
-    }
-    
-    const generatedCode = sendCode(signupForm.phone);
-    
-    // Log the verification code to console for debugging
-    console.log('🔐 DEBUG: Verification code generated:', generatedCode);
-    console.log('📱 DEBUG: Phone number:', signupForm.phone);
-    console.log('💡 DEBUG: Use this code in the verification form:', generatedCode);
-    
-    setMessages(prev => ({ 
-      ...prev, 
-      signup: `Code sent! Check browser console for verification code. Debug code: ${generatedCode}` 
-    }));
-    
-    // Auto-fill the phone in verify form
-    setVerifyForm(prev => ({ ...prev, vphone: signupForm.phone }));
-  };
+  const handleSignUp = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-  const handleVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Log verification attempt
-    console.log('🔍 DEBUG: Verifying code...');
-    console.log('📱 DEBUG: Phone:', verifyForm.vphone);
-    console.log('🔢 DEBUG: Entered code:', verifyForm.code);
-    
-    const ok = verifyCode(verifyForm.code);
-    
-    console.log('🎯 DEBUG: Verification result:', ok ? 'SUCCESS' : 'FAILED');
-    
-    setMessages(prev => ({ 
-      ...prev, 
-      verify: ok ? 'Verified — signed in.' : 'Invalid code' 
+  if (!/^\d{9,15}$/.test(signupForm.phone)) {
+    setMessages(prev => ({ ...prev, signup: 'Invalid phone number' }));
+    return;
+  }
+
+  try {
+    const response = await sendVerificationCode(signupForm.phone);
+
+    console.log('🔐 DEBUG: Verification code response:', response);
+    setMessages(prev => ({
+      ...prev,
+      signup: 'Verification code sent successfully! Check your phone or console.',
     }));
-    
-    if (ok) {
-      console.log('🎉 DEBUG: User successfully verified and signed in!');
-      navigate('/');
-    }
-  };
+
+    setVerifyForm(prev => ({ ...prev, vphone: signupForm.phone }));
+  } catch (error) {
+    console.error('Error sending verification code:', error);
+    setMessages(prev => ({ ...prev, signup: 'Failed to send code.' }));
+  }
+};
+
+  const handleVerify = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+
+  try {
+    const response = await verifyCode(verifyForm.vphone, verifyForm.code);
+
+    console.log('🎯 DEBUG: Verification successful:', response);
+    setMessages(prev => ({ ...prev, verify: 'Verified — signed in!' }));
+    navigate('/');
+  } catch (error) {
+    console.error('Error verifying code:', error);
+    setMessages(prev => ({ ...prev, verify: 'Invalid or expired code.' }));
+  }
+};
 
   const handleResend = () => {
     const phone = signupForm.phone || verifyForm.vphone;
@@ -83,7 +77,7 @@ export default function Login() {
       return;
     }
     
-    const newCode = sendCode(phone);
+    const newCode = sendVerificationCode(phone);
     
     // Log the new verification code
     console.log('🔄 DEBUG: Code resent to:', phone);

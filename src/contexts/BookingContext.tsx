@@ -1,45 +1,130 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import * as bookingService from '../services/bookingService';
-import { type Booking } from '../types/Booking';
+// src/contexts/BookingContext.tsx
+import React, { createContext, useEffect, useState, useCallback } from 'react'
+import { bookingService } from '../services/api'
+import { Booking, BookingStatus} from '../types' 
+import { useAuth } from './useAuth'
 
-type BCtx = {
-  bookings: Booking[];
-  create: (b: Omit<Booking, 'id' | 'createdAt' | 'status'>) => Booking;
-  updateStatus: (id: string, status: Booking['status']) => Booking | undefined;
-  refresh: () => void;
+interface BookingContextValue {
+  bookings: Booking[]
+  userBookings: Booking[]
+  loading: boolean
+  error: string | null
+  createBooking: (bookingData: Partial<Booking>) => Promise<Booking>
+  updateBookingStatus: (id: string, status: BookingStatus) => Promise<Booking>
+  cancelBooking: (id: string) => Promise<void>
+  refreshBookings: () => Promise<void>
+  calculatePrice: (carId: string, startDate: string, endDate: string, options: Record<string, unknown>) => Promise<number>
 }
 
-const Ctx = createContext<BCtx | undefined>(undefined);
+const BookingContext = createContext<BookingContextValue | undefined>(undefined)
 
 export function BookingProvider({ children }: { children: React.ReactNode }) {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [userBookings, setUserBookings] = useState<Booking[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const auth = useAuth()
+  const user = auth?.user ?? null
 
-  useEffect(() => setBookings(bookingService.listBookings()), []);
+  const loadBookings = useCallback(async () => {
+    try {
+      setLoading(true)
+      if (user?.role === 'admin') {
+        const allBookings = await bookingService.getAllBookings()
+        setBookings(allBookings)
+      }
+      
+      if (user) {
+        const userBookingsData = await bookingService.getUserBookings(user.id)
+        setUserBookings(userBookingsData)
+      }
+      
+      setError(null)
+    } catch (err) {
+      setError('Failed to load bookings')
+      console.error('Error loading bookings:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [user]) // Dependency array for useCallback
 
-  const create = (b: Omit<Booking, 'id' | 'createdAt' | 'status'>) => {
-    const nb = bookingService.createBooking(b);
-    setBookings(bookingService.listBookings());
-    return nb;
-  };
+  useEffect(() => {
+    loadBookings()
+  }, [loadBookings]) // Dependency array for useEffect
 
-  const updateStatus = (id: string, status: Booking['status']) => {
-    const u = bookingService.updateBookingStatus(id, status);
-    setBookings(bookingService.listBookings());
-    return u;
-  };
+  const createBooking = async (bookingData: Partial<Booking>): Promise<Booking> => {
+    try {
+      const newBooking = await bookingService.createBooking(bookingData)
+      setBookings(prev => [...prev, newBooking])
+      setUserBookings(prev => [...prev, newBooking])
+      return newBooking
+    } catch (err) {
+      console.error('Error creating booking:', err)
+      throw err
+    }
+  }
 
-  const refresh = () => setBookings(bookingService.listBookings());
+  const updateBookingStatus = async (id: string, status: BookingStatus): Promise<Booking> => {
+    try {
+      const updatedBooking = await bookingService.updateBookingStatus(id, status)
+      setBookings(prev => prev.map(booking => 
+        booking.id === id ? updatedBooking : booking
+      ))
+      setUserBookings(prev => prev.map(booking => 
+        booking.id === id ? updatedBooking : booking
+      ))
+      return updatedBooking
+    } catch (err) {
+      console.error('Error updating booking status:', err)
+      throw err
+    }
+  }
+
+  const cancelBooking = async (id: string): Promise<void> => {
+    try {
+      await bookingService.cancelBooking(id)
+      setBookings(prev => prev.filter(booking => booking.id !== id))
+      setUserBookings(prev => prev.filter(booking => booking.id !== id))
+    } catch (err) {
+      console.error('Error canceling booking:', err)
+      throw err
+    }
+  }
+
+  const refreshBookings = async (): Promise<void> => {
+    await loadBookings()
+  }
+
+  const calculatePrice = async (
+    carId: string, 
+    startDate: string, 
+    endDate: string, 
+    options: Record<string, unknown>
+  ): Promise<number> => {
+    return await bookingService.calculatePrice(carId, startDate, endDate, options)
+  }
 
   return (
-    <Ctx.Provider value={{ bookings, create, updateStatus, refresh }}>
+    <BookingContext.Provider value={{
+      bookings,
+      userBookings,
+      loading,
+      error,
+      createBooking,
+      updateBookingStatus,
+      cancelBooking,
+      refreshBookings,
+      calculatePrice
+    }}>
       {children}
-    </Ctx.Provider>
-  );
+    </BookingContext.Provider>
+  )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function useBookings() {
-  const ctx = useContext(Ctx);
-  if (!ctx) throw new Error('useBookings must be used within BookingProvider');
-  return ctx;
+export const useBookings = () => {
+  const context = useContext(BookingContext)
+  if (context === undefined) {
+    throw new Error('useBookings must be used within a BookingProvider')
+  }
+  return context
 }

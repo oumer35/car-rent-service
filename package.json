@@ -17,6 +17,8 @@
     "@tailwindcss/vite": "^4.1.16",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
+    "axios": "^1.12.2",
+    "jwt-decode": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.4"
@@ -42,5 +44,13 @@
   "main": "eslint.config.js",
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oumer35/car-rent-service.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oumer35/car-rent-service/issues"
+  },
+  "homepage": "https://github.com/oumer35/car-rent-service#readme"
 }

@@ -1,4 +1,18 @@
-import { createTheme } from '@mui/material/styles';
+// src/theme/theme.ts
+import { createTheme } from '@mui/material/styles'
+
+declare module '@mui/material/styles' {
+  interface Theme {
+    status: {
+      danger: string
+    }
+  }
+  interface ThemeOptions {
+    status?: {
+      danger?: string
+    }
+  }
+}
 
 const theme = createTheme({
   palette: {
@@ -6,6 +20,9 @@ const theme = createTheme({
       main: '#0b74de',
       light: '#3ea3ff',
       dark: '#0056b3',
+    },
+    secondary: {
+      main: '#ff6b35',
     },
     background: {
       default: '#f6f8fb',
@@ -52,7 +69,16 @@ const theme = createTheme({
         },
       },
     },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'var(--card)',
+          color: 'var(--text)',
+          boxShadow: 'none',
+        },
+      },
+    },
   },
-});
+})
 
-export default theme;
+export default theme
